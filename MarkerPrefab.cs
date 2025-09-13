@@ -1,26 +1,5 @@
-﻿using BepInEx;
-using BepInEx.Configuration;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
-using System.Reflection.Emit;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System;
-using System.IO;
-using BepInEx.Logging;
-using HarmonyLib;
-using System.Reflection;
-using System.Security;
-using System.Security.Permissions;
-using static UnityEngine.GUILayout;
-using UnityEngine.Rendering;
-using Steamworks;
-using rail;
-using xiaoye97;
 
 namespace DSPMarker
 {
@@ -85,13 +64,10 @@ namespace DSPMarker
             pinBaseText.GetComponent<Text>().resizeTextForBestFit = true;
             pinBaseText.GetComponent<Text>().resizeTextMaxSize = 60;
             pinBaseText.GetComponent<Text>().fontSize = 30;
-            //pinBaseText.GetComponent<Text>().resizeTextMaxSize = 35;
             pinBaseText.transform.localPosition = new Vector3(0, -28, 0);
             Destroy(pinBaseText.GetComponent<Shadow>());
             pinBaseText.SetActive(true);
-            //pinBaseText.GetComponent<Text>().color = Color.magenta;
-            //pinBaseText.GetComponent<Text>().fontSize = 50;
-           // LogManager.Logger.LogInfo("---------------------------------------------------------make marker 4");
+            // LogManager.Logger.LogInfo("---------------------------------------------------------make marker 4");
 
             pinBaseIcon1.AddComponent<Image>().sprite = LDB.techs.Select(1001).iconSprite;
             pinBaseIcon1.name = "pinBaseIcon1";

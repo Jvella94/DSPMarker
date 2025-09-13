@@ -1,14 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
-using System.Reflection.Emit;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System;
 using System.IO;
 using BepInEx.Logging;
@@ -16,11 +9,6 @@ using HarmonyLib;
 using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
-using static UnityEngine.GUILayout;
-using UnityEngine.Rendering;
-using Steamworks;
-using rail;
-using xiaoye97;
 using crecheng.DSPModSave;
 
 [module: UnverifiableCode]
@@ -28,65 +16,30 @@ using crecheng.DSPModSave;
 
 namespace DSPMarker
 {
-
-    [BepInPlugin("Appun.DSP.plugin.Marker", "DSPMarker", "0.0.8")]
+    [BepInPlugin("appuns.DSP.plugin.Marker", "DSPMarker", "0.1.0")]
     [BepInProcess("DSPGAME.exe")]
     [BepInDependency(DSPModSavePlugin.MODGUID)]
-
-
-
     public class Main : BaseUnityPlugin, IModCanSave
     {
-
-
-
-        //public static ConfigEntry<bool> ShowStationInfo;
         public static ConfigEntry<bool> DisableKeyTips;
-        //public static ConfigEntry<bool> alwaysDisplay;
-        //public static ConfigEntry<bool> throughPlanet;
-        //public static ConfigEntry<bool> ShowArrow;
         public static ConfigEntry<int> maxMarkers;
         public static bool showList = true;
-
-
-        //public static float signHeight = 3f;
-        //public static float signSize = 0f;
-        //public static bool signChanged = false;
-        //public static bool addSign = false;
-
+        
         public static Sprite arrowSprite;
         public static Sprite merkerSprite;
         public static Sprite roundSprite;
         public static Sprite ButtonSprite;
 
-        public static int maxMarker;
+        public static int maxMarkerAmount;
         public static int markerCount = 0;
-
-        //public static string jsonFilePath;
-
-        //public static bool showSignButton = true;
-
 
         public void Start()
         {
             LogManager.Logger = Logger;
             Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
 
-            ////configの設定
-            DisableKeyTips = Config.Bind("UI", "DisableKeyTips", false, "Disable Key Tips on right side");
             maxMarkers = Config.Bind("Marker", "maxMarker", 20, "Maximum number of markers");
-            maxMarker = maxMarkers.Value;
-            //alwaysDisplay = Config.Bind("General", "DisableKeyTips", true, "Disable Key Tips on right side");
-            //throughPlanet = Config.Bind("General", "DisableKeyTips", true, "Disable Key Tips on right side");
-            //ShowArrow = Config.Bind("General", "DisableKeyTips", true, "Disable Key Tips on right side");
-            ////maxCount = Config.Bind("General", "maxCount", 200, "Inventory Column Count");
-
-            //jsonFilePath = Path.Combine(Paths.ConfigPath, "markers.json");
-
-            ////テスト
-            ////GameMain.data.mainPlayer.gameObject.AddComponent<DynamicCreateMesh>();
-            ///
-            //LogManager.Logger.LogInfo("---------------------------------------------------------load icon");
+            maxMarkerAmount = maxMarkers.Value;
 
             LoadIcon();
             MarkerPrefab.Create();
@@ -99,25 +52,7 @@ namespace DSPMarker
 
         }
 
-        //[HarmonyPatch(typeof(VFPreload), "InvokeOnLoadWorkEnded")]
-
-        //public static class VFPreload_InvokeOnLoadWorkEnded
-        //{
-        //    [HarmonyPostfix]
-        //    public static void Postfix(VFPreload __instance)
-        //    {
-
-        //    }
-        //}
-
-        //ロード処理
-        //markerPrefab.transform.Find("round/pinBaseIcon1").gameObject.GetComponent<Image>().sprite = null;
-
-
-
         //イベントの作成
-
-
         public void Update()
         {
             if (GameMain.data == null)
@@ -141,37 +76,19 @@ namespace DSPMarker
                 //LogManager.Logger.LogInfo("---------------------------------------------------------GameMain.localPlanet : non");
                 return;
             }
-            //if (DSPGame.UIGame.viewMode == EViewMode.DysonEditor)
-            //{
-            //    MarkerList.markerList.SetActive(false);
-            //    MarkerPrefab.markerGroup.SetActive(false);
-
-            //    return;
-            //}
 
             if (UIGame.viewMode == EViewMode.Starmap || UIGame.viewMode == EViewMode.MilkyWay || UIGame.viewMode == EViewMode.DysonEditor)
-            // if (UIGame.viewMode != EViewMode.Sail && UIGame.viewMode != EViewMode.Normal && UIGame.viewMode != EViewMode.Globe && UIGame.viewMode != EViewMode.Build)
             {
                 MarkerList.markerList.SetActive(false);
                 MarkerPrefab.markerGroup.SetActive(false);
-
                 return;
             }
             //LogManager.Logger.LogInfo("---------------------------------------------------------UIGame.viewMode ");
             //LogManager.Logger.LogInfo("---------------------------------------------------------DSPGame.Game != null ");
-            //if (GameMain.data.mainPlayer.sailing)
-            //{
-            //    MarkerPrefab.markerGroup.SetActive(false);
-            //    MarkerList.listBase.SetActive(false);
-
-            //    //LogManager.Logger.LogInfo("---------------------------------------------------------sailing ");
-            //    return;
-            //}
             //LogManager.Logger.LogInfo("---------------------------------------------------------no sailing ");
             MarkerList.markerList.SetActive(true);
 
             MarkerPrefab.markerGroup.SetActive(true);
-            //MarkerList.listBase.SetActive(true);
 
             //LogManager.Logger.LogInfo("---------------------------------------------------------update ");
 
@@ -206,12 +123,8 @@ namespace DSPMarker
             }
         }
 
-
-
-
         public void Import(BinaryReader r)
         {
-            //MarkerPool.countInPlanet.Clear();
             MarkerPool.markerPool.Clear();
             MarkerPool.markerIdInPlanet.Clear();
 
@@ -250,7 +163,7 @@ namespace DSPMarker
                     marker.color.b = r.ReadSingle();
                     marker.color.a = r.ReadSingle();
                     marker.desc = r.ReadString();
-                    marker.alwaysDisplay = r.ReadBoolean();
+                    marker.enabled = r.ReadBoolean();
                     marker.throughPlanet = r.ReadBoolean();
                     marker.ShowArrow = r.ReadBoolean();
                     MarkerPool.markerPool.Add(Key, marker);
@@ -262,9 +175,6 @@ namespace DSPMarker
             {
                 LogManager.Logger.LogInfo("Save data version error");
             }
-
-            //MarkerList.Reset();
-
         }
 
         public void Export(BinaryWriter w)
@@ -301,7 +211,7 @@ namespace DSPMarker
                 w.Write(keyValuePair.Value.color.b);
                 w.Write(keyValuePair.Value.color.a);
                 w.Write(keyValuePair.Value.desc);
-                w.Write(keyValuePair.Value.alwaysDisplay);
+                w.Write(keyValuePair.Value.enabled);
                 w.Write(keyValuePair.Value.throughPlanet);
                 w.Write(keyValuePair.Value.ShowArrow);
             }
@@ -319,7 +229,6 @@ namespace DSPMarker
             }
         }
     }
-
 
     public class LogManager
     {

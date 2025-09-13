@@ -1,21 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BepInEx;
-using BepInEx.Configuration;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Events;
-using UnityEngine.EventSystems;
-using System.ComponentModel;
-using System.IO;
-using HarmonyLib;
-using System.Reflection;
-using xiaoye97;
-using System.Security;
-using System.Security.Permissions;
+using UnityEngine.UI;
 
 
 namespace DSPMarker
@@ -44,27 +30,27 @@ namespace DSPMarker
         public static bool showList = true;
         public static bool editMode;
         public static bool Guiding = false;
-        //public static Sprite purgeIcon;
 
         //UI解像度計算
         public static int UIheight = DSPGame.globalOption.uiLayoutHeight;
         public static int UIwidth = UIheight * Screen.width / Screen.height;
 
-
         public static void Create()
         {
-            boxMarker = new GameObject[Main.maxMarker];
-            boxSquare = new GameObject[Main.maxMarker];
-            boxText = new GameObject[Main.maxMarker];
-            boxIcon1 = new GameObject[Main.maxMarker];
-            boxIcon2 = new GameObject[Main.maxMarker];
+            boxMarker = new GameObject[Main.maxMarkerAmount];
+            boxSquare = new GameObject[Main.maxMarkerAmount];
+            boxText = new GameObject[Main.maxMarkerAmount];
+            boxIcon1 = new GameObject[Main.maxMarkerAmount];
+            boxIcon2 = new GameObject[Main.maxMarkerAmount];
 
             //ボタン＆リスト用オブジェクトの作成
-            markerList = new GameObject();
-            markerList.name = "MarkerList";
+            markerList = new GameObject
+            {
+                name = "MarkerList"
+            };
             markerList.transform.SetParent(GameObject.Find("UI Root/Overlay Canvas/In Game/Windows").transform);
-            markerList.transform.localPosition = new Vector3(UIwidth / 2 - 60, UIheight / 2 - 30, 0);
-            markerList.transform.localScale = new Vector3(1, 1, 1);
+            markerList.transform.localPosition = new Vector3(Screen.width / 2 - 60, Screen.height / 2 - 45, 0);
+            markerList.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
 
             //リストの表示切替用ボタンの作成
             markerButton = Instantiate(GameObject.Find("UI Root/Overlay Canvas/In Game/Game Menu/detail-func-group/dfunc-1"), markerList.transform) as GameObject;
@@ -80,19 +66,15 @@ namespace DSPMarker
             markerButton.AddComponent<UIClickHandler>();
             //ボタンイベントの作成
             markerButton.GetComponent<UIButton>().button.onClick.AddListener(new UnityAction(OnClickMarkerButton));
-            //markerButton.GetComponent<UIButton>().onRightClick2 += OnRightClickMarkerButton;
-            //markerButton.GetComponent<UIButton>().onRightClick.AddListener(() => OnRightClickMarkerButton());
-            //markerButton.GetComponent<UIButton>().onRightClick.AddListener(new UnityAction(OnRightClickMarkerButton));
-
-
 
             //ボタン＆リスト用オブジェクトの作成
-            listBase = new GameObject();
-            listBase.name = "listBase";
+            listBase = new GameObject
+            {
+                name = "listBase"
+            };
             listBase.transform.SetParent(markerList.transform);
             listBase.transform.localPosition = new Vector3(0, 0, -1);
             listBase.transform.localScale = new Vector3(1, 1, 1);
-
 
             //リストprefabの作成
 
@@ -117,33 +99,30 @@ namespace DSPMarker
             boxBaseSquare.transform.localScale = new Vector3(1, 1, 1);
             boxBaseSquare.SetActive(false);
 
-            boxBaseText.transform.SetParent(boxBasePrefab.transform);
+            boxBaseText = Instantiate(GameObject.Find("UI Root/Overlay Canvas/In Game/Scene UIs/Vein Marks/vein-tip-prefab/info-text"), boxBasePrefab.transform);
             boxBaseText.name = "boxBaseText";
             boxBaseText.AddComponent<Outline>().effectDistance = new Vector2(1, -1);
-            boxBaseText.AddComponent<Text>().text = "New\nMarker".Translate();
+            boxBaseText.GetComponent<Text>().text = "New\nMarker".Translate();
             boxBaseText.GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
             boxBaseText.GetComponent<Text>().lineSpacing = 0.7f;
             boxBaseText.GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;
             boxBaseText.GetComponent<Text>().verticalOverflow = VerticalWrapMode.Truncate;
             boxBaseText.GetComponent<Text>().resizeTextForBestFit = true;
-            boxBaseText.GetComponent<Text>().fontSize = 15;
+            boxBaseText.GetComponent<Text>().fontSize = 5;
             boxBaseText.GetComponent<RectTransform>().anchorMax = new Vector2(0, 0);
             boxBaseText.GetComponent<RectTransform>().anchorMin = new Vector2(0, 0);
             boxBaseText.GetComponent<RectTransform>().sizeDelta = new Vector3(60, 60, 0);
-            //boxBaseText.GetComponent<RectTransform>().sizeDelta = new Vector3(60, 35, 0);
-            //pinBaseText.GetComponent<Text>().resizeTextMaxSize = 35;
-            //boxBaseText.transform.localPosition = new Vector3(0, -15, 0);
             boxBaseText.transform.localPosition = new Vector3(0, 0, 0);
             boxBaseText.transform.localScale = new Vector3(1, 1, 1);
+            Destroy(boxBaseText.GetComponent<Shadow>());
             boxBaseText.SetActive(true);
-            //pinBaseText.GetComponent<Text>().color = Color.magenta;
-            //pinBaseText.GetComponent<Text>().fontSize = 50;
 
             modeText = Instantiate(boxBaseText.gameObject, markerList.transform);
             modeText.name = "modeText";
-            modeText.transform.localPosition = new Vector3(-22, -21, 0);
-            modeText.GetComponent<Text>().text = "Guide\nMode".Translate();
-            modeText.GetComponent<RectTransform>().sizeDelta = new Vector3(50, 40, 0);
+            modeText.transform.localPosition = new Vector3(-70, 10, 0);
+            modeText.GetComponent<Text>().alignment = TextAnchor.MiddleRight;
+            modeText.GetComponent<Text>().text = "Guide Mode".Translate();
+            modeText.GetComponent<RectTransform>().sizeDelta = new Vector3(100, 25, 0);
             modeText.SetActive(true);
 
             boxBaseIcon1.AddComponent<Image>().sprite = LDB.techs.Select(1001).iconSprite;
@@ -164,9 +143,9 @@ namespace DSPMarker
             boxBaseIcon2.transform.localScale = new Vector3(1, 1, 1);
 
             //リストの作成
-            int maxRow = (UIheight - 270 - 115 - 40 ) / boxSize;
+            int maxRow = Screen.height / 78;
             float scale = (float)boxSize / 70;
-            for (int i = 0; i < Main.maxMarker; i++)
+            for (int i = 0; i < Main.maxMarkerAmount; i++)
             {
                 boxMarker[i] = Instantiate(boxBasePrefab.gameObject, listBase.transform);
                 boxMarker[i].name = "boxMarker" + i;
@@ -186,14 +165,6 @@ namespace DSPMarker
                 boxMarker[i].GetComponent<Button>().onClick.AddListener(() => OnClickBoxMarker(count));
             }
             boxBasePrefab.SetActive(false);
-
-            //for (int i = 0; i < Main.maxMarker; i++)
-            //{
-            //    ;
-            //    boxMarker[0].GetComponent<Button>().onClick.AddListener(new UnityAction(onClickboxMarker0));
-            //    //this.alarmSwitchButton.onClick += this.OnAlarmSwitchButtonClick;
-            //    //this.nameInput.onEndEdit.AddListener(new UnityAction<string>(this.OnNameInputSubmit));
-            //}
         }
 
         //イベント
@@ -201,68 +172,55 @@ namespace DSPMarker
         public static void OnClickMarkerButton()
         {
             showList = !showList;
+            modeText.SetActive(showList);
             listBase.gameObject.SetActive(showList);
             markerButton.GetComponent<UIButton>().highlighted = showList;
-
         }
 
-
-
-        public static void Crear()
+        public static void Clear()
         {
-            for (int i = 0; i < Main.maxMarker; i++)
+            for (int i = 0; i < Main.maxMarkerAmount; i++)
             {
                 boxMarker[i].gameObject.SetActive(false);
             }
         }
 
-
         //右クリックで新規
-
         //リストをクリックしたら
         public static void OnClickBoxMarker(int i)
         {
-            //boxText[i].GetComponent<Text>().text = "TESTGO"+i;
-            //boxIcon1[i].GetComponent<Image>().sprite = LDB.techs.Select(1001).iconSprite;
-            //boxIcon2[i].GetComponent<Image>().sprite = LDB.techs.Select(1002).iconSprite;
             //LogManager.Logger.LogInfo("---------------------------------------------------------i : " + i);
             if (editMode)
             {
-                //int i = Int32.Parse(obj.name.Replace("boxMarker", ""));
-                //boxText[i].GetComponent<Text>().text = "RIGHT" + i;
                 //LogManager.Logger.LogInfo("---------------------------------------------------------i : " + i);
-                if (!MarkerEditor.window.activeSelf)
-                {
-                    MarkerEditor.Open(i);
-                }
-                else
-                {
-                    MarkerEditor.Close();
-                }
-            }else if (!GameMain.data.mainPlayer.sailing)
+                if (MarkerEditor.window.activeSelf) MarkerEditor.Close();
+                int planetId = GameMain.localPlanet.id;
+                bool visibleEditbox = editMode && MarkerPool.markerIdInPlanet[planetId].Count < Main.maxMarkerAmount;
+                //LogManager.Logger.LogInfo("Box Marker " + i + " clicked. visibleEditbox: " + visibleEditbox);
+                if (i == 0 && visibleEditbox) MarkerEditor.Open(MarkerPool.markerIdInPlanet[planetId].Count);
+                else MarkerEditor.Open(visibleEditbox ? i - 1 : i);
+            }
+            else if (!GameMain.data.mainPlayer.sailing)
             {
                 if (Guiding)
                 {
                     GameMain.mainPlayer.ClearOrders();
                     Guiding = false;
-                    return;
                 }
-                //GameMain.mainPlayer.gizmo.orderGizmos.Clear();
-                //Array.Clear(GameMain.mainPlayer.orders.orderQueue, 0, GameMain.mainPlayer.orders.orderQueue.Length);
-                //LineGizmo.pool.Clear();
-                //CircleGizmo.pool.Clear();
 
                 int planetId = GameMain.data.localPlanet.id;
                 var num = MarkerPool.markerIdInPlanet[planetId][i];
                 //オーダー設定
-                OrderNode order = new OrderNode();
-                order.type = EOrderType.Move;
-                order.target = MarkerPool.markerPool[num].pos;
-                order.objType = EObjectType.Entity;
-                order.objId = 0;
-                order.objPos = MarkerPool.markerPool[num].pos;
+                OrderNode order = new OrderNode
+                {
+                    type = EOrderType.Move,
+                    target = MarkerPool.markerPool[num].pos,
+                    objType = EObjectType.Entity,
+                    objId = 0,
+                    objPos = MarkerPool.markerPool[num].pos
+                };
                 GameMain.mainPlayer.orders.currentOrder = order;
- 
+
                 CircleGizmo circleGizmo = CircleGizmo.Create(0, order.target, 0.27f);
                 circleGizmo.relateObject = order;
                 circleGizmo.color = MarkerPool.markerPool[num].color;
@@ -286,10 +244,7 @@ namespace DSPMarker
                 lineGizmo.Open();
                 GameMain.mainPlayer.gizmo.orderGizmos.Add(lineGizmo);
                 Guiding = true;
-
             }
-
-
         }
 
         //全ての右クリック
@@ -302,44 +257,33 @@ namespace DSPMarker
                 {
                     if (editMode)
                     {
-                        modeText.GetComponent<Text>().text = "Guide\nMode".Translate();
+                        modeText.GetComponent<Text>().text = "Guide Mode".Translate();
                         MarkerEditor.Close();
                         editMode = false;
                     }
                     else
                     {
-                        modeText.GetComponent<Text>().text = "Edit\nMode".Translate();
+                        if (showList == false)
+                        {
+                            showList = !showList;
+                            listBase.gameObject.SetActive(showList);
+                            markerButton.GetComponent<UIButton>().highlighted = showList;
+                        }
+                        modeText.GetComponent<Text>().text = "Edit Mode".Translate();
                         editMode = true;
                     }
                     Refresh();
                     //LogManager.Logger.LogInfo("---------------------------------------------------------markerButton RIGHT cLICK ");
                 }
             }
-            else
-            {
-                //if (editMode)
-                //{
-                //    int i = Int32.Parse(obj.name.Replace("boxMarker", ""));
-                //    //boxText[i].GetComponent<Text>().text = "RIGHT" + i;
-                //    //LogManager.Logger.LogInfo("---------------------------------------------------------i : " + i);
-                //    if (!MarkerEditor.window.activeSelf)
-                //    {
-                //        MarkerEditor.Open(i);
-                //    }
-                //    else
-                //    {
-                //        MarkerEditor.Close();
-                //    }
-                //}
-
-            }
         }
         public static void Refresh()
         {
             //LogManager.Logger.LogInfo("---------------------------------------------------------refresh");
             //LogManager.Logger.LogInfo("---------------------------------------------------------MarkerPool.markerPool.Count : " + MarkerPool.markerPool.Count);
-
+            if (GameMain.localPlanet is null) return;
             int planetId = GameMain.localPlanet.id;
+            
 
             if (!MarkerPool.markerIdInPlanet.ContainsKey(planetId))
             {
@@ -347,84 +291,81 @@ namespace DSPMarker
                 MarkerPool.markerIdInPlanet.Add(planetId, list);
             }
 
-            for (int i = 0; i < Main.maxMarker; i++)
+            bool showEditBox = editMode && MarkerPool.markerIdInPlanet[planetId].Count < Main.maxMarkerAmount;
+
+            if (showEditBox)
             {
-                if (i < MarkerPool.markerIdInPlanet[planetId].Count)
+                // Show the edit box in slot 0
+                boxMarker[0].GetComponent<Image>().color = new Color(0.7f, 0.5f, 0, 1);
+                boxSquare[0].SetActive(false);
+                boxIcon1[0].SetActive(false);
+                boxIcon2[0].SetActive(false);
+                boxText[0].transform.localPosition = new Vector3(-30, 0, 0);
+                boxText[0].GetComponent<Text>().text = "New\nMarker".Translate();
+                boxText[0].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 60, 0);
+                boxMarker[0].SetActive(true);
+            }
+            else
+            {
+                // Hide the edit box if count reached/exceeded max
+                boxMarker[0].SetActive(false);
+            }
+
+            // Fill in the rest of the boxes, with an index shift if edit box is present
+            for (int i = 0; i < Main.maxMarkerAmount; i++)
+            {
+                int boxIndex = showEditBox ? i + 1 : i;
+                if (i < MarkerPool.markerIdInPlanet[planetId].Count && boxIndex < Main.maxMarkerAmount)
                 {
                     var num = MarkerPool.markerIdInPlanet[planetId][i];
                     var marker = MarkerPool.markerPool[num];
-
-                    boxMarker[i].GetComponent<Image>().color = marker.color;
-                    boxMarker[i].SetActive(true);
-                    boxSquare[i].GetComponent<Image>().color = new Color(marker.color.r * 0.3f, marker.color.g * 0.3f, marker.color.b * 0.3f, 1);
-                    boxSquare[i].SetActive(true);
-                    boxText[i].GetComponent<Text>().text = marker.desc;
-                    //boxText[i].transform.localPosition = new Vector3(0, -15, 0);
-                    //boxText[i].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 35, 0);
+                    boxMarker[boxIndex].GetComponent<Image>().color = marker.color;
+                    boxMarker[boxIndex].SetActive(true);
+                    boxSquare[boxIndex].GetComponent<Image>().color = new Color(marker.color.r * 0.3f, marker.color.g * 0.3f, marker.color.b * 0.3f, 1);
+                    boxSquare[boxIndex].SetActive(true);
+                    string desc = marker.desc.Length > 0 ? marker.desc : i.ToString();
+                    boxText[boxIndex].GetComponent<Text>().text = desc;
                     if (marker.icon1ID == 0 && marker.icon2ID == 0)
                     {
-                        boxText[i].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 60, 0);
-                        boxText[i].transform.localPosition = new Vector3(0, 0, 0);
-                    }else
-                    {
-                        boxText[i].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 35, 0);
-                        boxText[i].transform.localPosition = new Vector3(0, -15, 0);
-                    }
-                    boxText[i].SetActive(true);
-
-                    if (marker.icon1ID == 0)
-                    {
-                        boxIcon1[i].SetActive(false);
+                        boxText[boxIndex].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 60, 0);
+                        boxText[boxIndex].transform.localPosition = new Vector3(-30, 0, 0);
                     }
                     else
                     {
-                        boxIcon1[i].GetComponent<Image>().sprite = LDB.signals.IconSprite(marker.icon1ID);
-                        boxIcon1[i].SetActive(true);
+                        boxText[boxIndex].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 35, 0);
+                        boxText[boxIndex].transform.localPosition = new Vector3(-30, -15, 0);
+                    }
+                    boxText[boxIndex].SetActive(true);
+                    if (marker.icon1ID == 0)
+                        boxIcon1[boxIndex].SetActive(false);
+                    else
+                    {
+                        boxIcon1[boxIndex].GetComponent<Image>().sprite = LDB.signals.IconSprite(marker.icon1ID);
+                        boxIcon1[boxIndex].SetActive(true);
                     }
                     if (marker.icon2ID == 0)
+                        boxIcon2[boxIndex].SetActive(false);
+                    else
                     {
-                        boxIcon2[i].SetActive(false);
+                        boxIcon2[boxIndex].GetComponent<Image>().sprite = LDB.signals.IconSprite(marker.icon2ID);
+                        boxIcon2[boxIndex].SetActive(true);
+                    }
+                    if (marker.icon2ID == 0 && desc == string.Empty)
+                    {
+                        boxIcon1[boxIndex].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 60, 0);
+                        boxIcon1[boxIndex].transform.localPosition = new Vector3(0, 0, 0);
                     }
                     else
                     {
-                        boxIcon2[i].GetComponent<Image>().sprite = LDB.signals.IconSprite(marker.icon2ID);
-                        boxIcon2[i].SetActive(true);
+                        boxIcon1[boxIndex].GetComponent<RectTransform>().sizeDelta = new Vector3(30, 30, 0);
+                        boxIcon1[boxIndex].transform.localPosition = new Vector3(-15, 15, 0);
                     }
-                    if (marker.icon2ID == 0 && marker.desc == "")
-                    {
-                        boxIcon1[i].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 60, 0);
-                        boxIcon1[i].transform.localPosition = new Vector3(0, 0, 0);
-                    }
-                    else
-                    {
-                        boxIcon1[i].GetComponent<RectTransform>().sizeDelta = new Vector3(30, 30, 0);
-                        boxIcon1[i].transform.localPosition = new Vector3(-15, 15, 0);
-                    }
-
-
                 }
-                else
+                else if (boxIndex < Main.maxMarkerAmount)
                 {
-                    boxMarker[i].SetActive(false);
-                }
-            }
-            if (editMode)
-            {
-                if(MarkerPool.markerIdInPlanet[planetId].Count < Main.maxMarker)
-                {
-                    int count = MarkerPool.markerIdInPlanet[planetId].Count;
-                    boxMarker[count].GetComponent<Image>().color = new Color(0.7f, 0.5f, 0, 1);
-                    boxSquare[count].SetActive(false);
-                    boxIcon1[count].SetActive(false);
-                    boxIcon2[count].SetActive(false);
-                    boxText[count].transform.localPosition = new Vector3(0, 0, 0);
-                    boxText[count].GetComponent<Text>().text = "New\nMarker".Translate();
-                    boxText[count].GetComponent<RectTransform>().sizeDelta = new Vector3(60, 60, 0);
-
-                    boxMarker[count].SetActive(true);
+                    boxMarker[boxIndex].SetActive(false);
                 }
             }
         }
-
     }
-    }
+}

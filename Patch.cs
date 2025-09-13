@@ -1,27 +1,5 @@
-﻿using BepInEx;
-using BepInEx.Logging;
-using BepInEx.Configuration;
-using HarmonyLib;
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Net;
-using System.Linq;
-using System.Text;
-using System.Net.Http;
-using System.Collections;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
+﻿using HarmonyLib;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using UnityEngine.Networking;
-using System.Security;
-using System.Security.Permissions;
 
 namespace DSPMarker
 {
@@ -38,9 +16,8 @@ namespace DSPMarker
 
             //位置の調整
             MarkerList.markerList.transform.localPosition = new Vector3(UIwidth / 2 - 60, UIheight / 2 - 70, 0);
-            //MarkerList.listBase.transform.localPosition = new Vector3(UIwidth / 2 - 60, UIheight / 2 - 70, 0);
             int maxRow = (UIheight - 270 - 115) / MarkerList.boxSize;
-            for (int i = 0; i < Main.maxMarker; i++)
+            for (int i = 0; i < Main.maxMarkerAmount; i++)
             {
                 float scale = (float)MarkerList.boxSize / 70;
                 MarkerList.boxMarker[i].transform.localScale = new Vector3(scale, scale, 1);
@@ -49,17 +26,6 @@ namespace DSPMarker
                 MarkerList.boxMarker[i].transform.localPosition = new Vector3(x, y, 0);
 
             }
-        }
-
-        //キーチップの非表示
-        [HarmonyPrefix, HarmonyPatch(typeof(UIKeyTips), "_OnUpdate")]
-        public static bool UIKeyTips_OnUpdate_Prefix(UIOptionWindow __instance)
-        {
-            if (Main.DisableKeyTips.Value)
-            {
-                return false;
-            }
-            return true;
         }
 
         //他の惑星に到着したら再表示
