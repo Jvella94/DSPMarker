@@ -265,9 +265,7 @@ namespace DSPMarker
                     {
                         if (showList == false)
                         {
-                            showList = !showList;
-                            listBase.gameObject.SetActive(showList);
-                            markerButton.GetComponent<UIButton>().highlighted = showList;
+                            OnClickMarkerButton();
                         }
                         modeText.GetComponent<Text>().text = "Edit Mode".Translate();
                         editMode = true;
